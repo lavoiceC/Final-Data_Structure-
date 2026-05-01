@@ -5,6 +5,8 @@ import requests
 
 def log(message):
     outbox_box.insert(tk.END, message + "\n")
+
+
 def crawl_run():
     url = "http://citelms.net/Internships/Summer_2018/Fan_Site/"
     response = requests.get(url, timeout=10)
@@ -13,11 +15,12 @@ def crawl_run():
     link_query = []
     Visited_Links = []
     dictionary = {}
+    soup = BeautifulSoup(response.text, "html.parser")
+
 
     
 
 # create the soup which is an xml tree of the page
-    soup = BeautifulSoup(response.text, "html.parser")
 
     title_tag = soup.find("title")
     log("Title with html:" + str(title_tag))
@@ -33,9 +36,41 @@ def crawl_run():
     
         response = requests.get(link, timeout=10)
         response.raise_for_status()  # Raises an error for bad responses
-
+        
         soup = BeautifulSoup(response.text, "html.parser")
+
         Visited_Links.append(link)
+
+        # word counter 
+        text = soup.get_text()
+        text = text.lower()
+
+        words = text.split()
+
+        word_count = {}
+
+        for w in words:
+            clean = ""
+            for ch in w:
+                if "a" <= ch <= "z":
+                    clean += ch
+            if len(clean) <= 2:
+                continue
+
+            if clean not in word_count:
+                word_count[clean] = 1
+            else: 
+                word_count[clean] += 1
+        
+        sorted_words = sorted(word_count, key=word_count.get, reverse=True)
+        
+        top_words = sorted_words[:10]
+
+        for w in top_words:
+            dictionary[w] = link 
+            log("Saved word:" + w)
+
+
     
         title_tag = soup.find("title")
         if title_tag:
@@ -55,12 +90,15 @@ def crawl_run():
                             log("Adding:" + full_url)
                             link_query.append(full_url)
 
-    query = input("Enter a search word ").lower()
+    query = search_entry.get().lower()
 
     if query in dictionary:
         log("Found:" + dictionary[query])
     else:
         log("Not found.")
+
+    
+
 
 root = tk.Tk()
 root.title("Web Crawler")
@@ -69,6 +107,9 @@ root.configure(bg="yellow")
 
 label = tk.Label(root, text="Click button to crawl", bg="yellow")
 label.pack(pady=10)
+
+search_entry = tk.Entry(root,width=40)
+search_entry.pack(pady=5)
 
 crawl_button = tk.Button(root, text="Run Crawler", command=crawl_run)
 crawl_button.pack(pady=10)
