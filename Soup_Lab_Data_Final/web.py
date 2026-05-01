@@ -3,6 +3,8 @@ import tkinter as tk
 
 import requests
 
+def log(message):
+    outbox_box.insert(tk.END, message + "\n")
 def crawl_run():
     url = "http://citelms.net/Internships/Summer_2018/Fan_Site/"
     response = requests.get(url, timeout=10)
@@ -12,23 +14,14 @@ def crawl_run():
     Visited_Links = []
     dictionary = {}
 
-    soup = BeautifulSoup(response.text, "html.parser")
-
-    title_tag = soup.find("title")
-    print("Title with html:", title_tag)
-    print("Title text: ", title_tag.text)
-
-# Find all <a> links
-    link_query.append(url + "index.html")
-
     
 
 # create the soup which is an xml tree of the page
     soup = BeautifulSoup(response.text, "html.parser")
 
     title_tag = soup.find("title")
-    print("Title with html:", title_tag)
-    print("Title text: ", title_tag.text)
+    log("Title with html:" + str(title_tag))
+    log("Title text: " + title_tag.text)
 
 # Find all <a> links
     link_query.append(url + "index.html")
@@ -48,7 +41,7 @@ def crawl_run():
         if title_tag:
             title = title_tag.text.strip().lower()
             dictionary[title] = link 
-            print("Page Title:", title)
+            log("Page Title:" + title)
     
         tags = soup.find_all("a")
         for tag in tags: 
@@ -59,15 +52,15 @@ def crawl_run():
                     if "http" not in href:
                         if "void" not in href and "pdf" not in href and "javascript" not in href:
                             full_url = url + href
-                            print("Adding:", full_url)
+                            log("Adding:" + full_url)
                             link_query.append(full_url)
 
     query = input("Enter a search word ").lower()
 
     if query in dictionary:
-        print("Found:", dictionary[query])
+        log("Found:" + dictionary[query])
     else:
-        print("Not found.")
+        log("Not found.")
 
 root = tk.Tk()
 root.title("Web Crawler")
