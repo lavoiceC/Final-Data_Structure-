@@ -4,18 +4,18 @@ import tkinter as tk
 import requests
 
 def log(message):
-    outbox_box.insert(tk.END, message + "\n")
+    outbox_box.insert(tk.END, message + "\n") #Constant time big 1 
 
 
 def crawl_run():
     url = "http://citelms.net/Internships/Summer_2018/Fan_Site/"
     response = requests.get(url, timeout=10)
     response.raise_for_status()  # Raises an error for bad responses
-
+    soup = BeautifulSoup(response.text, "html.parser")
     link_query = []
     Visited_Links = []
     dictionary = {}
-    soup = BeautifulSoup(response.text, "html.parser")
+    
 
 
     
@@ -49,34 +49,28 @@ def crawl_run():
 
         word_count = {}
 
-        for w in words:
-            clean = ""
-            for ch in w:
-                if "a" <= ch <= "z":
-                    clean += ch
+        for w in words: # Big O(n)
+            clean = "".join(ch for ch in w if "a" <= ch <= "z")
             if len(clean) <= 2:
                 continue
-
-            if clean not in word_count:
-                word_count[clean] = 1
-            else: 
-                word_count[clean] += 1
+            word_count[clean] = word_count.get(clean, 0) + 1    
         
         sorted_words = sorted(word_count, key=word_count.get, reverse=True)
-        
         top_words = sorted_words[:10]
 
         for w in top_words:
-            dictionary[w] = link 
-            log("Saved word:" + w)
+            stemmed = stem(w)
+            dictionary.setdefault(stemmed, []).append(link)
+            log("Saved word:" + stemmed)
 
 
     
         title_tag = soup.find("title")
         if title_tag:
             title = title_tag.text.strip().lower()
-            dictionary[title] = link 
-            log("Page Title:" + title)
+            stemmed_title = " ".join(stem(word) for word in title.split())
+            dictionary.setdefault(stemmed_title, []).append(link)
+            log("Page Title:" + stemmed_title)
     
         tags = soup.find_all("a")
         for tag in tags: 
@@ -90,13 +84,22 @@ def crawl_run():
                             log("Adding:" + full_url)
                             link_query.append(full_url)
 
-    query = search_entry.get().lower()
+    query = stem(search_entry.get().lower())
 
     if query in dictionary:
-        log("Found:" + dictionary[query])
+        log("Found:")
+        for result in dictionary[query]:
+            log(result)
     else:
         log("Not found.")
 
+def stem(word):
+    endings = ["ing", "ed", "es", "s", "er", "ly"]
+
+    for end in endings:
+        if word.endswith(end) and len(word) > len(end) + 2:
+            return word[: -len(end)]
+    return(word)
     
 
 
